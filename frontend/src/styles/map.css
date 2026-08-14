@@ -1,0 +1,239 @@
+/* ─────────────────────────────────────────────────────────────
+   BloodConnect — 60 FPS Hardware-Accelerated Minimalist Map Styles
+   ───────────────────────────────────────────────────────────── */
+
+.blood-map,
+.leaflet-container {
+  border-radius: 1rem;
+  overflow: hidden;
+  font-family: inherit;
+  z-index: 10;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  border: 1px solid #e5e7eb;
+}
+
+/* Custom map controls */
+.blood-map__control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transform: translateZ(0);
+}
+.blood-map__control:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+.blood-map__control:active {
+  background: #f3f4f6;
+}
+
+/* ── DivIcon Markers (Hardware Accelerated) ─────────────────── */
+
+.custom-div-icon {
+  background: transparent !important;
+  border: none !important;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* 1. Blood Request Marker (Teardrop Blood Drop) */
+.req-marker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  transform: translateZ(0);
+}
+.req-marker__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: #dc2626;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.req-marker__symbol {
+  transform: rotate(45deg);
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.req-marker--urgent .req-marker__icon {
+  background: #ea580c;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.35);
+}
+
+.req-marker--critical .req-marker__icon {
+  background: #e11d48;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.4);
+}
+
+/* 2. Matched Donor Markers */
+.donor-marker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateZ(0);
+}
+.donor-marker__pin {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #3b82f6;
+  box-shadow: 0 2px 5px rgba(59, 130, 246, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: #1d4ed8;
+  position: relative;
+}
+.donor-marker__badge {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  background: #3b82f6;
+  color: #ffffff;
+  border: 1px solid #ffffff;
+  border-radius: 9999px;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 0 3px;
+  line-height: 12px;
+}
+
+.donor-marker--accepted .donor-marker__pin {
+  border-color: #10b981;
+  background: #f0fdf4;
+  color: #047857;
+  box-shadow: 0 2px 5px rgba(16, 185, 129, 0.3);
+}
+.donor-marker--accepted .donor-marker__badge {
+  background: #10b981;
+}
+
+/* 3. User Marker */
+.user-marker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  transform: translateZ(0);
+}
+.user-marker__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  z-index: 2;
+}
+
+/* ── Minimalist Leaflet Popups ───────────────────────────────── */
+
+.blood-popup .leaflet-popup-content-wrapper {
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 0;
+  border: 1px solid #f3f4f6;
+}
+.blood-popup .leaflet-popup-content {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+.blood-popup .leaflet-popup-tip {
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.popup-card {
+  padding: 0.75rem 0.875rem;
+  min-width: 170px;
+  max-width: 240px;
+}
+.popup-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+.popup-card__title {
+  font-weight: 700;
+  color: #111827;
+  font-size: 0.8125rem;
+}
+.popup-card__badge {
+  display: inline-block;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+.popup-card__badge--critical {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.popup-card__badge--urgent {
+  background: #ffedd5;
+  color: #c2410c;
+}
+.popup-card__badge--normal {
+  background: #f1f5f9;
+  color: #475569;
+}
+.popup-card__badge--accepted {
+  background: #d1fae5;
+  color: #047857;
+}
+.popup-card__badge--notified {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.popup-card__row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+  font-size: 0.725rem;
+}
+.popup-card__label {
+  color: #6b7280;
+}
+.popup-card__val {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.leaflet-control-attribution {
+  font-size: 9px;
+  color: #9ca3af;
+  background: rgba(255, 255, 255, 0.8) !important;
+  padding: 0 4px !important;
+}
