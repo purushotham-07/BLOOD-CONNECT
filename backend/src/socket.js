@@ -1,12 +1,18 @@
 const { Server } = require('socket.io');
-const env = require('./config/env');
+const { isOriginAllowed } = require('./config/cors');
 
 let io = null;
 
 function initSocket(httpServer) {
   io = new Server(httpServer, {
     cors: {
-      origin: env.clientUrl || '*',
+      origin: (origin, callback) => {
+        if (isOriginAllowed(origin)) {
+          callback(null, true);
+        } else {
+          callback(null, false);
+        }
+      },
       methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
       credentials: true,
     },

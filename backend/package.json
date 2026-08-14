@@ -9,6 +9,7 @@
     "start": "node src/server.js",
     "migrate": "node database/migrate.js",
     "seed": "node database/seeds/seed.js",
+    "clear": "node database/clear.js",
     "test": "jest --runInBand --forceExit"
   },
   "keywords": [
