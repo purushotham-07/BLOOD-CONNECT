@@ -2,7 +2,9 @@ import { io } from 'socket.io-client';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '')
-  : 'http://localhost:5000';
+  : (import.meta.env.PROD
+      ? 'https://blood-connect-zrs8.onrender.com'
+      : 'http://localhost:5000');
 
 let socket = null;
 
