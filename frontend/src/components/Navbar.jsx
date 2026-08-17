@@ -3,18 +3,23 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 
-const NavItem = ({ to, label }) => (
+const NavItem = ({ to, label, unread = 0 }) => (
   <NavLink
     to={to}
     className={({ isActive }) =>
-      `rounded-xl px-3.5 py-2 text-sm font-semibold transition-all ${
+      `flex items-center justify-between rounded-xl px-3.5 py-2 text-sm font-semibold transition-all ${
         isActive
           ? 'bg-brand-50 text-brand-700 shadow-xs'
           : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
       }`
     }
   >
-    {label}
+    <span>{label}</span>
+    {unread > 0 && (
+      <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white shadow-xs">
+        {unread}
+      </span>
+    )}
   </NavLink>
 );
 
@@ -35,24 +40,24 @@ export default function Navbar() {
   if (user) {
     if (isDonor) {
       links.push({ to: '/dashboard', label: 'Dashboard' });
-      links.push({ to: '/donor-profile', label: 'Donor Profile & Location' });
+      links.push({ to: '/donor-profile', label: 'Donor Profile' });
       links.push({ to: '/blood-requests', label: 'Browse Requests' });
     } else {
       links.push({ to: '/dashboard', label: 'Dashboard' });
       links.push({ to: '/blood-requests', label: 'My Requests' });
       links.push({ to: '/create-request', label: '+ New Request' });
     }
-    links.push({ to: '/notifications', label: 'Notifications' });
+    links.push({ to: '/notifications', label: 'Notifications', unread });
   }
 
   return (
     <header className="sticky top-0 z-40 border-b border-gray-200/80 bg-white/95 backdrop-blur-md">
-      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link to={user ? '/dashboard' : '/'} className="flex items-center gap-2.5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-sm ring-2 ring-brand-100">
+      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-3 sm:px-6">
+        <Link to={user ? '/dashboard' : '/'} className="flex items-center gap-2">
+          <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-sm ring-2 ring-brand-100 shrink-0">
             <svg
-              width="20"
-              height="20"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -65,8 +70,8 @@ export default function Navbar() {
             </svg>
           </span>
           <div className="flex flex-col">
-            <span className="text-lg font-black tracking-tight text-gray-900 leading-tight">BloodConnect</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-600">Location Matching</span>
+            <span className="text-base sm:text-lg font-black tracking-tight text-gray-900 leading-tight">BloodConnect</span>
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-brand-600">Location Matching</span>
           </div>
         </Link>
 
@@ -115,42 +120,57 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile menu button */}
-        <button
-          type="button"
-          aria-label="Toggle menu"
-          onClick={() => setOpen((o) => !o)}
-          className="rounded-xl p-2 text-gray-600 hover:bg-gray-100 md:hidden"
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-            {open ? (
-              <>
-                <path d="M18 6 6 18" />
-                <path d="m6 6 12 12" />
-              </>
-            ) : (
-              <>
-                <path d="M3 6h18" />
-                <path d="M3 12h18" />
-                <path d="M3 18h18" />
-              </>
-            )}
-          </svg>
-        </button>
+        {/* Mobile menu button & notification badge */}
+        <div className="flex items-center gap-2 md:hidden">
+          {user && unread > 0 && (
+            <Link
+              to="/notifications"
+              className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-50 text-brand-700 relative ring-1 ring-brand-200"
+              aria-label="Notifications"
+            >
+              <span className="text-sm">🔔</span>
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-brand-600 px-1 text-[9px] font-bold text-white">
+                {unread}
+              </span>
+            </Link>
+          )}
+
+          <button
+            type="button"
+            aria-label="Toggle menu"
+            onClick={() => setOpen((o) => !o)}
+            className="rounded-xl p-2 text-gray-600 hover:bg-gray-100"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              {open ? (
+                <>
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </>
+              ) : (
+                <>
+                  <path d="M3 6h18" />
+                  <path d="M3 12h18" />
+                  <path d="M3 18h18" />
+                </>
+              )}
+            </svg>
+          </button>
+        </div>
       </nav>
 
       {/* Mobile drawer */}
       {open && (
-        <div className="border-t border-gray-100 bg-white px-4 pb-4 pt-2 md:hidden">
+        <div className="border-t border-gray-100 bg-white px-4 pb-4 pt-2 md:hidden animate-slide-up shadow-lg">
           <div className="flex flex-col gap-1.5">
             {user ? (
               <>
-                <div className="px-3 py-1 text-xs font-semibold text-gray-400">
-                  Signed in as {user.name} ({isDonor ? 'Donor' : 'Receiver'})
+                <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 border-b border-gray-100 mb-1">
+                  Signed in as <strong className="text-gray-700">{user.name}</strong> ({isDonor ? 'Donor' : 'Receiver'})
                 </div>
                 {links.map((l) => (
                   <Link key={l.to} to={l.to} onClick={() => setOpen(false)}>
-                    <NavItem to={l.to} label={l.label} />
+                    <NavItem to={l.to} label={l.label} unread={l.unread} />
                   </Link>
                 ))}
                 <button
@@ -158,7 +178,7 @@ export default function Navbar() {
                     setOpen(false);
                     handleLogout();
                   }}
-                  className="rounded-xl px-3 py-2 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50"
+                  className="rounded-xl px-3.5 py-2 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50 mt-1"
                 >
                   Log out
                 </button>

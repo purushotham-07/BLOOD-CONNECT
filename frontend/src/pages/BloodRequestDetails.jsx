@@ -15,7 +15,6 @@ import {
   statusTone,
   urgencyTone,
   titleCase,
-  getErrorMessage,
   getDirectionsUrl,
 } from '../utils/helpers';
 
@@ -100,7 +99,7 @@ export default function BloodRequestDetails() {
       await reloadRequest();
       setActionSuccess('Request was successfully cancelled.');
     } catch (err) {
-      setActionError(getErrorMessage(err, 'Could not cancel the request.'));
+      setActionError(err);
     } finally {
       setBusy(false);
     }
@@ -120,7 +119,7 @@ export default function BloodRequestDetails() {
         setActionSuccess('You have declined this request.');
       }
     } catch (err) {
-      setActionError(getErrorMessage(err, 'Could not respond to the request.'));
+      setActionError(err);
     } finally {
       setBusy(false);
     }
@@ -128,15 +127,15 @@ export default function BloodRequestDetails() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-6xl px-4 py-10">
-        <Loading className="mt-10" label="Loading request details & matching map…" />
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        <Loading className="mt-8" label="Loading request details & matching map…" />
       </main>
     );
   }
 
   if (error) {
     return (
-      <main className="mx-auto max-w-6xl px-4 py-10">
+      <main className="mx-auto max-w-6xl px-4 py-8">
         <ErrorMessage error={error} />
       </main>
     );
@@ -157,7 +156,7 @@ export default function BloodRequestDetails() {
       : null;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+    <main className="mx-auto max-w-6xl px-3 py-6 sm:px-6 sm:py-8">
       <Link
         to={isDonor ? '/dashboard' : '/blood-requests'}
         className="inline-flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-900 transition-colors"
@@ -167,15 +166,15 @@ export default function BloodRequestDetails() {
 
       {/* Header */}
       <div className="mt-3 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <div className="flex items-center gap-3.5">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-xl font-extrabold text-brand-700 ring-1 ring-brand-200">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-lg font-extrabold text-brand-700 ring-1 ring-brand-200 shrink-0">
             {formatBloodGroup(request.blood_group)}
           </span>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-gray-900">{request.hospital_name}</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">{request.hospital_name}</h1>
               {request.status === 'MATCHING' && (
-                <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" title="Live Matching Active" />
+                <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Live Matching Active" />
               )}
             </div>
             <p className="text-xs text-gray-500">
@@ -184,14 +183,14 @@ export default function BloodRequestDetails() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 self-start sm:self-auto">
           <Badge tone={urgencyTone(request.urgency)}>{titleCase(request.urgency)}</Badge>
           <Badge tone={statusTone(request.status)}>{titleCase(request.status)}</Badge>
         </div>
       </div>
 
       {/* Fulfillment Progress Bar */}
-      <div className="mt-5 rounded-xl border border-gray-100 bg-white p-4 shadow-xs">
+      <div className="mt-4 rounded-xl border border-gray-100 bg-white p-3.5 shadow-xs">
         <div className="flex items-center justify-between text-xs font-semibold">
           <span className="text-gray-700">Donation Progress</span>
           <span className="text-brand-600">
@@ -209,13 +208,13 @@ export default function BloodRequestDetails() {
       </div>
 
       {/* Main Grid: Interactive Map & Details */}
-      <div className="mt-5 grid gap-5 lg:grid-cols-3">
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
         {/* Left 2 Cols: Live Matching Map & Chat */}
-        <div className="lg:col-span-2 space-y-5">
+        <div className="lg:col-span-2 space-y-4">
           <Card>
             <div className="flex items-center justify-between mb-2.5">
               <div>
-                <h2 className="text-sm font-bold text-gray-900">
+                <h2 className="text-xs sm:text-sm font-bold text-gray-900">
                   {canSeeMatches ? 'Location-Based Donor Matching Map' : 'Hospital Location'}
                 </h2>
                 <p className="text-[11px] text-gray-500">
@@ -225,7 +224,7 @@ export default function BloodRequestDetails() {
                 </p>
               </div>
               {canSeeMatches && (
-                <div className="flex items-center gap-2 text-[11px] text-gray-500">
+                <div className="flex items-center gap-2 text-[10px] text-gray-500">
                   <span className="inline-flex items-center gap-1">
                     <span className="h-2 w-2 rounded-full bg-blue-500"></span> Notified
                   </span>
@@ -238,7 +237,7 @@ export default function BloodRequestDetails() {
 
             <Map
               interactive={false}
-              height="380px"
+              height="320px"
               requestData={request}
               matchedDonors={canSeeMatches ? liveMatches : []}
               showSearchRadius={true}
@@ -264,7 +263,7 @@ export default function BloodRequestDetails() {
             <Card>
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h3 className="text-sm font-bold text-gray-900">Matched Nearby Donors</h3>
+                  <h3 className="text-xs sm:text-sm font-bold text-gray-900">Matched Nearby Donors</h3>
                   <p className="text-[11px] text-gray-500">
                     Live updates via PostgreSQL + PostGIS spatial distance ranking
                   </p>
@@ -326,21 +325,25 @@ export default function BloodRequestDetails() {
         </div>
 
         {/* Right 1 Col: Request Info & Actions */}
-        <div className="space-y-5">
+        <div className="space-y-4">
           {/* Action Card for Donor */}
           {isDonor && ['ACTIVE', 'MATCHING', 'PARTIALLY_FULFILLED'].includes(request.status) && (
             <div className="rounded-xl border border-brand-200 bg-gradient-to-b from-brand-50/60 to-white p-4 shadow-xs">
-              <h2 className="text-sm font-bold text-brand-900">Urgent Help Needed</h2>
+              <h2 className="text-xs sm:text-sm font-bold text-brand-900">Urgent Help Needed</h2>
               <p className="mt-1 text-xs text-gray-600">
                 Can you donate {formatBloodGroup(request.blood_group)} {titleCase(request.component)} for this patient?
               </p>
 
               {actionSuccess && (
-                <div className="mt-2.5 rounded-lg bg-emerald-50 p-2.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200">
+                <div className="mt-2.5 rounded-lg bg-emerald-50 p-2.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200 animate-slide-up">
                   {actionSuccess}
                 </div>
               )}
-              {actionError && <ErrorMessage error={actionError} />}
+              {actionError && (
+                <div className="mt-2.5">
+                  <ErrorMessage error={actionError} />
+                </div>
+              )}
 
               <div className="mt-3 flex flex-col gap-2">
                 <Button
@@ -364,8 +367,8 @@ export default function BloodRequestDetails() {
 
           {/* Details Card */}
           <Card>
-            <h3 className="text-sm font-bold text-gray-900">Request Information</h3>
-            <dl className="mt-3 space-y-2.5 text-xs">
+            <h3 className="text-xs sm:text-sm font-bold text-gray-900">Request Information</h3>
+            <dl className="mt-3 space-y-2 text-xs">
               <div>
                 <dt className="font-semibold text-gray-400">Hospital</dt>
                 <dd className="mt-0.5 font-medium text-gray-900">{request.hospital_name}</dd>
@@ -393,7 +396,7 @@ export default function BloodRequestDetails() {
               {request.description && (
                 <div>
                   <dt className="font-semibold text-gray-400">Notes</dt>
-                  <dd className="mt-0.5 rounded-lg bg-gray-50 p-2 text-gray-700">
+                  <dd className="mt-0.5 rounded-lg bg-gray-50 p-2 text-gray-700 break-words">
                     {request.description}
                   </dd>
                 </div>

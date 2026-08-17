@@ -1,6 +1,39 @@
-/** Extract a human-readable message from an Axios error. */
-export function getErrorMessage(error, fallback = 'Something went wrong. Please try again.') {
-  return error?.response?.data?.message || error?.message || fallback;
+/** Extract a human-readable, detailed message from an error. */
+export function getErrorMessage(error, fallback = 'An unexpected error occurred. Please try again.') {
+  if (!error) return fallback;
+
+  // 1. Array of validation errors from express-validator (error.response.data.errors)
+  if (Array.isArray(error.response?.data?.errors) && error.response.data.errors.length > 0) {
+    return error.response.data.errors.map((e) => e.msg || e.message || JSON.stringify(e)).join('; ');
+  }
+
+  // 2. Explicit backend error message string
+  if (typeof error.response?.data?.message === 'string' && error.response.data.message.trim()) {
+    return error.response.data.message;
+  }
+
+  // 3. Fallback error property
+  if (typeof error.response?.data?.error === 'string' && error.response.data.error.trim()) {
+    return error.response.data.error;
+  }
+
+  // 4. Axios / Network Error string
+  if (typeof error.message === 'string' && error.message.trim()) {
+    if (error.message.includes('Network Error')) {
+      return 'Network Error: Could not connect to the server. Please check your internet connection.';
+    }
+    if (error.response?.status) {
+      return `Server Error (${error.response.status}): ${error.message}`;
+    }
+    return error.message;
+  }
+
+  // 5. String error passed directly
+  if (typeof error === 'string' && error.trim()) {
+    return error;
+  }
+
+  return fallback;
 }
 
 /** Format a DB snake_case value into a friendly label, e.g. A_POSITIVE -> A+. */

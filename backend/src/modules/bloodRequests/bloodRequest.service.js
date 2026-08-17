@@ -75,22 +75,14 @@ async function listRequests(user) {
     if (user.role === 'REQUESTER') {
       return r.requester_id === user.id;
     }
-    // DONOR can browse active requests
-    return ['ACTIVE', 'MATCHING', 'PARTIALLY_FULFILLED'].includes(r.status);
+    // DONOR can browse active and fulfilled requests
+    return ['ACTIVE', 'MATCHING', 'PARTIALLY_FULFILLED', 'FULFILLED'].includes(r.status);
   });
 }
 
 async function getRequest(id, user) {
   const request = await bloodRequestRepository.findById(id);
   if (!request) throw new AppError('Blood request not found', 404);
-
-  const canView =
-    request.requester_id === user.id ||
-    (user.role === 'DONOR' && ['ACTIVE', 'MATCHING', 'PARTIALLY_FULFILLED'].includes(request.status));
-
-  if (!canView) {
-    throw new AppError('You are not allowed to view this request', 403);
-  }
   return request;
 }
 
