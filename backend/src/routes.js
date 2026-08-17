@@ -19,5 +19,6 @@ router.use('/blood-requests', require('./modules/matching/matching.routes'));
 router.use('/donations', require('./modules/donations/donation.routes'));
 router.use('/notifications', require('./modules/notifications/notification.routes'));
 router.use('/chat', require('./modules/chat/chat.routes'));
+router.use('/camps', require('./modules/camps/camp.routes'));
 
 module.exports = router;

@@ -16,6 +16,10 @@ const BloodRequests = lazy(() => import('./pages/BloodRequests'));
 const CreateBloodRequest = lazy(() => import('./pages/CreateBloodRequest'));
 const BloodRequestDetails = lazy(() => import('./pages/BloodRequestDetails'));
 const Notifications = lazy(() => import('./pages/Notifications'));
+const DonationCamps = lazy(() => import('./pages/DonationCamps'));
+const CreateCamp = lazy(() => import('./pages/CreateCamp'));
+const EligibilityQuiz = lazy(() => import('./pages/EligibilityQuiz'));
+const DonorCard = lazy(() => import('./pages/DonorCard'));
 
 function PageLoading() {
   return (
@@ -35,6 +39,8 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/eligibility-quiz" element={<EligibilityQuiz />} />
+            <Route path="/camps" element={<DonationCamps />} />
 
             <Route
               path="/dashboard"
@@ -45,10 +51,26 @@ export default function App() {
               }
             />
             <Route
+              path="/camps/create"
+              element={
+                <ProtectedRoute>
+                  <CreateCamp />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/donor-profile"
               element={
                 <ProtectedRoute role="DONOR">
                   <DonorProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/donor-card"
+              element={
+                <ProtectedRoute role="DONOR">
+                  <DonorCard />
                 </ProtectedRoute>
               }
             />

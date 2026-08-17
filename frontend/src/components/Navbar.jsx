@@ -7,7 +7,7 @@ const NavItem = ({ to, label, unread = 0 }) => (
   <NavLink
     to={to}
     className={({ isActive }) =>
-      `flex items-center justify-between rounded-xl px-3.5 py-2 text-sm font-semibold transition-all ${
+      `flex items-center justify-between rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
         isActive
           ? 'bg-brand-50 text-brand-700 shadow-xs'
           : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
@@ -40,19 +40,27 @@ export default function Navbar() {
   if (user) {
     if (isDonor) {
       links.push({ to: '/dashboard', label: 'Dashboard' });
-      links.push({ to: '/donor-profile', label: 'Donor Profile' });
+      links.push({ to: '/donor-profile', label: 'My Profile' });
+      links.push({ to: '/donor-card', label: 'Donor Pass 🪪' });
       links.push({ to: '/blood-requests', label: 'Browse Requests' });
+      links.push({ to: '/camps', label: 'Donation Camps 🎪' });
+      links.push({ to: '/eligibility-quiz', label: 'Health Quiz 🩺' });
     } else {
       links.push({ to: '/dashboard', label: 'Dashboard' });
       links.push({ to: '/blood-requests', label: 'My Requests' });
       links.push({ to: '/create-request', label: '+ New Request' });
+      links.push({ to: '/camps', label: 'Donation Camps 🎪' });
+      links.push({ to: '/eligibility-quiz', label: 'Health Quiz 🩺' });
     }
     links.push({ to: '/notifications', label: 'Notifications', unread });
+  } else {
+    links.push({ to: '/camps', label: 'Donation Camps 🎪' });
+    links.push({ to: '/eligibility-quiz', label: 'Eligibility Quiz 🩺' });
   }
 
   return (
     <header className="sticky top-0 z-40 border-b border-gray-200/80 bg-white/95 backdrop-blur-md">
-      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-3 sm:px-6">
+      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-3 sm:px-6">
         <Link to={user ? '/dashboard' : '/'} className="flex items-center gap-2">
           <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-sm ring-2 ring-brand-100 shrink-0">
             <svg
@@ -76,43 +84,41 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden items-center gap-1 md:flex">
-          {user ? (
-            <>
-              {links.map((l) => (
-                <div key={l.to} className="relative">
-                  <NavItem to={l.to} label={l.label} />
-                  {l.to === '/notifications' && unread > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white shadow-xs">
-                      {unread}
-                    </span>
-                  )}
-                </div>
-              ))}
-
-              <div className="ml-3 flex items-center gap-2 border-l border-gray-200 pl-3">
-                <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
-                  {user.name} ({isDonor ? 'Donor' : 'Receiver'})
+        <div className="hidden items-center gap-1 lg:flex">
+          {links.map((l) => (
+            <div key={l.to} className="relative">
+              <NavItem to={l.to} label={l.label} />
+              {l.to === '/notifications' && unread > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] font-bold text-white shadow-xs">
+                  {unread}
                 </span>
-                <button
-                  onClick={handleLogout}
-                  className="rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
-                >
-                  Log out
-                </button>
-              </div>
-            </>
+              )}
+            </div>
+          ))}
+
+          {user ? (
+            <div className="ml-2 flex items-center gap-2 border-l border-gray-200 pl-3">
+              <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700 max-w-[120px] truncate">
+                {user.name}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="rounded-xl px-2.5 py-1 text-xs font-semibold text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+              >
+                Log out
+              </button>
+            </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="ml-2 flex items-center gap-2 border-l border-gray-200 pl-3">
               <Link
                 to="/login"
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition"
+                className="rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition"
               >
                 Log in
               </Link>
               <Link
                 to="/register"
-                className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700"
+                className="rounded-xl bg-brand-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-brand-700"
               >
                 Get Started
               </Link>
@@ -121,7 +127,7 @@ export default function Navbar() {
         </div>
 
         {/* Mobile menu button & notification badge */}
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-2 lg:hidden">
           {user && unread > 0 && (
             <Link
               to="/notifications"
@@ -161,8 +167,8 @@ export default function Navbar() {
 
       {/* Mobile drawer */}
       {open && (
-        <div className="border-t border-gray-100 bg-white px-4 pb-4 pt-2 md:hidden animate-slide-up shadow-lg">
-          <div className="flex flex-col gap-1.5">
+        <div className="border-t border-gray-100 bg-white px-4 pb-4 pt-2 lg:hidden animate-slide-up shadow-lg">
+          <div className="flex flex-col gap-1">
             {user ? (
               <>
                 <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 border-b border-gray-100 mb-1">
@@ -178,19 +184,26 @@ export default function Navbar() {
                     setOpen(false);
                     handleLogout();
                   }}
-                  className="rounded-xl px-3.5 py-2 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50 mt-1"
+                  className="rounded-xl px-3.5 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 mt-1"
                 >
                   Log out
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" onClick={() => setOpen(false)} className="rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100">
-                  Log in
-                </Link>
-                <Link to="/register" onClick={() => setOpen(false)} className="rounded-xl bg-brand-600 px-3 py-2 text-center text-sm font-bold text-white">
-                  Get Started
-                </Link>
+                {links.map((l) => (
+                  <Link key={l.to} to={l.to} onClick={() => setOpen(false)}>
+                    <NavItem to={l.to} label={l.label} />
+                  </Link>
+                ))}
+                <div className="mt-2 flex flex-col gap-1.5 border-t border-gray-100 pt-2">
+                  <Link to="/login" onClick={() => setOpen(false)} className="rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100">
+                    Log in
+                  </Link>
+                  <Link to="/register" onClick={() => setOpen(false)} className="rounded-xl bg-brand-600 px-3 py-2 text-center text-xs font-bold text-white">
+                    Get Started
+                  </Link>
+                </div>
               </>
             )}
           </div>
