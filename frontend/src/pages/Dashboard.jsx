@@ -115,8 +115,8 @@ export default function Dashboard() {
             </p>
           </div>
           <Link to="/donor-profile">
-            <Button variant="secondary" className="rounded-xl">
-              ⚙️ Edit Profile & Saved Location
+            <Button variant="secondary" className="rounded-xl text-xs font-semibold py-2 px-3.5">
+              ✏️ Edit Profile
             </Button>
           </Link>
         </div>
