@@ -5,7 +5,7 @@ const LeafletMap = lazy(() => import('./LeafletMap'));
 const DEFAULT_COORDS = { lat: 17.385044, lng: 78.486671 };
 
 /**
- * Mobile-optimized interactive Map component with OpenStreetMap Location Search & GPS.
+ * Mobile-optimized interactive Map component with High-Accuracy Location Search & GPS.
  */
 function Map({
   value,
@@ -27,6 +27,7 @@ function Map({
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [searchFeedback, setSearchFeedback] = useState(null);
   const searchContainerRef = useRef(null);
 
   // Close search dropdown on click outside
@@ -42,46 +43,67 @@ function Map({
     };
   }, []);
 
-  // Debounced search via OpenStreetMap Nominatim API
+  // Perform geocoding search using OpenStreetMap Nominatim
+  const executeSearch = useCallback(async (query) => {
+    if (!query || !query.trim() || query.trim().length < 2) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    setSearching(true);
+    setSearchFeedback(null);
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+        query.trim()
+      )}&limit=8&addressdetails=1&extratags=1`;
+      const res = await fetch(url, {
+        headers: {
+          'Accept-Language': 'en',
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0) {
+          setSearchResults(data);
+          setShowDropdown(true);
+        } else {
+          setSearchResults([]);
+          setSearchFeedback('No matching location found. Try searching with a broader city or landmark.');
+          setShowDropdown(false);
+        }
+      }
+    } catch (err) {
+      console.error('Location search error:', err);
+      setSearchFeedback('Could not connect to location search. Tap directly on the map or use GPS.');
+    } finally {
+      setSearching(false);
+    }
+  }, []);
+
+  // Debounced live typing search
   useEffect(() => {
-    if (!searchQuery.trim() || searchQuery.length < 3) {
+    if (!searchQuery.trim() || searchQuery.trim().length < 3) {
       setSearchResults([]);
       setSearching(false);
       return;
     }
 
-    const controller = new AbortController();
-    const timer = setTimeout(async () => {
-      setSearching(true);
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          searchQuery.trim()
-        )}&limit=5&addressdetails=1`;
-        const res = await fetch(url, {
-          signal: controller.signal,
-          headers: {
-            'Accept-Language': 'en',
-          },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setSearchResults(data || []);
-          setShowDropdown(true);
-        }
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.error('Location search error:', err);
-        }
-      } finally {
-        setSearching(false);
-      }
-    }, 400);
+    const timer = setTimeout(() => {
+      executeSearch(searchQuery);
+    }, 350);
 
     return () => {
       clearTimeout(timer);
-      controller.abort();
     };
-  }, [searchQuery]);
+  }, [searchQuery, executeSearch]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      executeSearch(searchQuery);
+    }
+  };
 
   const selectSearchResult = (item) => {
     const coords = {
@@ -90,7 +112,18 @@ function Map({
     };
     onChange?.(coords);
     setShowDropdown(false);
-    setSearchQuery(item.display_name?.split(',')[0] || item.display_name);
+    setSearchFeedback(null);
+
+    // Format clean display name
+    const mainTitle =
+      item.name ||
+      item.address?.suburb ||
+      item.address?.neighbourhood ||
+      item.address?.hospital ||
+      item.address?.city ||
+      item.display_name?.split(',')[0];
+
+    setSearchQuery(mainTitle || item.display_name);
   };
 
   const locate = useCallback(() => {
@@ -121,13 +154,13 @@ function Map({
       (err) => {
         setLocating(false);
         if (err?.code === 1) {
-          setLocateError('GPS permission denied. Please search your area above or tap on the map.');
+          setLocateError('GPS permission denied. Please search your location above or tap on the map.');
         } else if (err?.code === 2) {
-          setLocateError('Position unavailable. Please search your area above or tap on the map.');
+          setLocateError('Position unavailable. Please search your location above or tap on the map.');
         } else if (err?.code === 3) {
-          setLocateError('GPS request timed out. Please search your area above or tap on the map.');
+          setLocateError('GPS request timed out. Please search your location above or tap on the map.');
         } else {
-          setLocateError('Could not get GPS location. Please search your area above or tap on the map.');
+          setLocateError('Could not get GPS location. Please search your location above or tap on the map.');
         }
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
@@ -139,6 +172,7 @@ function Map({
       if (!interactive) return;
       setLocateError(null);
       setAccuracyNotice(null);
+      setSearchFeedback(null);
       onChange?.(pos);
     },
     [interactive, onChange]
@@ -149,55 +183,88 @@ function Map({
       {/* Location Search Bar & Controls above map (Only in selection/interactive mode) */}
       {interactive && !requestData && (
         <div ref={searchContainerRef} className="relative z-30 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          {/* Search Input Box */}
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => {
-                if (searchResults.length > 0) setShowDropdown(true);
-              }}
-              placeholder="🔍 Search city, area, hospital, or locality..."
-              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-2xs"
-            />
-            {searching && (
-              <span className="absolute right-2.5 top-2 text-[10px] text-gray-400 animate-pulse">
-                Searching…
-              </span>
-            )}
-            {searchQuery && !searching && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery('');
-                  setSearchResults([]);
-                  setShowDropdown(false);
+          {/* Search Form Box */}
+          <form onSubmit={handleSearchSubmit} className="relative flex-1">
+            <div className="relative flex items-center">
+              <span className="absolute left-3 text-gray-400 text-xs">🔍</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSearchFeedback(null);
                 }}
-                className="absolute right-2.5 top-2 text-xs font-bold text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            )}
+                onFocus={() => {
+                  if (searchResults.length > 0) setShowDropdown(true);
+                }}
+                placeholder="Search city, hospital, area, landmark, or street..."
+                className="w-full rounded-xl border border-gray-200 bg-white pl-8 pr-16 py-2 text-xs outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-2xs"
+              />
+              <div className="absolute right-1.5 flex items-center gap-1">
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSearchResults([]);
+                      setShowDropdown(false);
+                      setSearchFeedback(null);
+                    }}
+                    className="p-1 text-xs font-bold text-gray-400 hover:text-gray-600 transition"
+                    title="Clear"
+                  >
+                    ✕
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  disabled={searching || !searchQuery.trim()}
+                  className="rounded-lg bg-gray-900 text-white px-2 py-1 text-[11px] font-bold hover:bg-black transition disabled:opacity-50"
+                >
+                  {searching ? '…' : 'Find'}
+                </button>
+              </div>
+            </div>
 
             {/* Live Search Suggestions Dropdown */}
             {showDropdown && searchResults.length > 0 && (
-              <ul className="absolute left-0 right-0 top-full mt-1 max-h-48 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg z-50 divide-y divide-gray-50 text-xs">
-                {searchResults.map((item, idx) => (
-                  <li
-                    key={idx}
-                    onClick={() => selectSearchResult(item)}
-                    className="cursor-pointer px-3 py-2 hover:bg-brand-50 transition text-left"
-                  >
-                    <p className="font-semibold text-gray-800 truncate">
-                      {item.display_name?.split(',')[0] || item.display_name}
-                    </p>
-                    <p className="text-[10px] text-gray-400 truncate">{item.display_name}</p>
-                  </li>
-                ))}
+              <ul className="absolute left-0 right-0 top-full mt-1 max-h-56 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl z-50 divide-y divide-gray-50 text-xs">
+                {searchResults.map((item, idx) => {
+                  const mainName =
+                    item.name ||
+                    item.address?.hospital ||
+                    item.address?.suburb ||
+                    item.address?.city ||
+                    item.display_name.split(',')[0];
+
+                  const subAddress = [
+                    item.address?.suburb,
+                    item.address?.city || item.address?.town || item.address?.county,
+                    item.address?.state,
+                    item.address?.country,
+                  ]
+                    .filter(Boolean)
+                    .join(', ');
+
+                  return (
+                    <li
+                      key={idx}
+                      onClick={() => selectSearchResult(item)}
+                      className="cursor-pointer px-3.5 py-2.5 hover:bg-brand-50 transition flex items-start gap-2.5"
+                    >
+                      <span className="text-sm mt-0.5 shrink-0">📍</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-gray-900 truncate">{mainName}</p>
+                        <p className="text-[10px] text-gray-500 truncate leading-tight mt-0.5">
+                          {subAddress || item.display_name}
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
-          </div>
+          </form>
 
           {/* Action Buttons */}
           <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
@@ -206,7 +273,7 @@ function Map({
                 type="button"
                 onClick={locate}
                 disabled={locating}
-                className="flex items-center gap-1 rounded-xl bg-brand-50 border border-brand-200 text-brand-700 hover:bg-brand-100 px-3 py-2 text-xs font-bold transition shadow-2xs"
+                className="flex items-center gap-1.5 rounded-xl bg-brand-50 border border-brand-200 text-brand-700 hover:bg-brand-100 px-3 py-2 text-xs font-bold transition shadow-2xs"
               >
                 <svg
                   width="13"
@@ -230,6 +297,9 @@ function Map({
               type="button"
               onClick={() => {
                 setSearchQuery('');
+                setSearchResults([]);
+                setShowDropdown(false);
+                setSearchFeedback(null);
                 onChange?.(DEFAULT_COORDS);
               }}
               className="rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 px-2.5 py-2 text-xs font-semibold transition shadow-2xs"
@@ -265,7 +335,13 @@ function Map({
         </Suspense>
       </div>
 
-      {/* Informational Status Banners */}
+      {/* Search Feedback & Informational Status Banners */}
+      {searchFeedback && (
+        <div className="rounded-xl bg-gray-100 p-2.5 text-[11px] font-medium text-gray-700" role="status">
+          ℹ️ {searchFeedback}
+        </div>
+      )}
+
       {locateError && (
         <div className="rounded-xl bg-rose-50 p-2.5 text-[11px] font-medium text-rose-700 ring-1 ring-rose-200" role="alert">
           {locateError}

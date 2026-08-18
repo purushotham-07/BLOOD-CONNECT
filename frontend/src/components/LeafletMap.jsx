@@ -72,9 +72,9 @@ function AutoFitBounds({ bounds, center }) {
   const map = useMap();
   useEffect(() => {
     if (bounds && bounds.length > 1) {
-      map.fitBounds(bounds, { padding: [35, 35], maxZoom: 15, animate: false });
-    } else if (center) {
-      map.setView(center, map.getZoom() || 13, { animate: false });
+      map.fitBounds(bounds, { padding: [35, 35], maxZoom: 15, animate: true });
+    } else if (center && Array.isArray(center) && center.length === 2 && !Number.isNaN(center[0])) {
+      map.flyTo(center, Math.max(map.getZoom() || 14, 14), { duration: 0.8 });
     }
   }, [bounds, center, map]);
   return null;
@@ -130,7 +130,7 @@ export default function LeafletMap({
     if (requestData && requestData.latitude && requestData.longitude) {
       return [parseFloat(requestData.latitude), parseFloat(requestData.longitude)];
     }
-    if (markerPosition) {
+    if (markerPosition && markerPosition.lat !== undefined && markerPosition.lng !== undefined) {
       return [markerPosition.lat, markerPosition.lng];
     }
     if (value && value.lat !== undefined && value.lng !== undefined) {
@@ -182,7 +182,7 @@ export default function LeafletMap({
 
       <MapContainer
         center={centerPos}
-        zoom={12}
+        zoom={14}
         scrollWheelZoom={false}
         preferCanvas={true}
         style={{ height, width: '100%' }}
@@ -282,8 +282,8 @@ export default function LeafletMap({
         {/* Matched Donor Markers */}
         {matchedDonors &&
           matchedDonors.map((donor) => {
-            if (!donor.approximateLocation?.latitude || !donor.approximateLocation?.longitude) return null;
-            const donorPos = [donor.approximateLocation.latitude, donor.approximateLocation.longitude];
+            if (!donor.approximateLatitude || !donor.approximateLongitude) return null;
+            const donorPos = [donor.approximateLatitude, donor.approximateLongitude];
             const isAccepted = donor.responseStatus === 'ACCEPTED';
 
             return (
