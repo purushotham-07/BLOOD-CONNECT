@@ -15,3 +15,8 @@ exports.respond = asyncHandler(async (req, res) => {
   const data = await matchingService.respond(req.params.id, req.user, req.body);
   res.status(201).json({ success: true, data });
 });
+
+exports.confirmDonation = asyncHandler(async (req, res) => {
+  const data = await matchingService.confirmDonation(req.params.id, req.user, req.body);
+  res.json({ success: true, data });
+});

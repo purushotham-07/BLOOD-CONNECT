@@ -2,18 +2,15 @@ const matchingRepository = require('./matching.repository');
 const bloodRequestRepository = require('../bloodRequests/bloodRequest.repository');
 const donorRepository = require('../donors/donor.repository');
 const compatibilityService = require('./compatibility.service');
-const env = require('../../config/env');
 const AppError = require('../../utils/AppError');
+const env = require('../../config/env');
 const {
   emitMatchesUpdated,
   emitRequestUpdated,
   emitUserNotification,
 } = require('../../socket');
 
-/**
- * Determine the search radius in meters according to the request urgency level.
- * Configurable from environment, never hardcoded.
- */
+/** Calculate dynamic search radius based on urgency level */
 function getSearchRadiusMeters(urgency) {
   switch (urgency) {
     case 'CRITICAL':
@@ -26,29 +23,28 @@ function getSearchRadiusMeters(urgency) {
   }
 }
 
-/**
- * Sanitize donor records into safe, privacy-preserving match representations.
- * Explicitly omits exact GPS coordinates, home address, and phone numbers.
- */
-function sanitizeMatches(rawDonors) {
-  return rawDonors.map((d) => ({
-    donorId: d.donor_profile_id,
-    donorName: d.donor_name,
-    bloodGroup: d.blood_group,
-    distanceKm: parseFloat(d.distance_km),
-    available: d.available,
-    verified: d.verified,
-    responseStatus: d.response_status,
-    approximateLocation: {
-      latitude: parseFloat(d.approx_lat),
-      longitude: parseFloat(d.approx_lng),
-    },
-  }));
+/** Sanitize donor data for public privacy */
+function sanitizeMatches(donors) {
+  return donors.map((d) => {
+    // Generate deterministic privacy fuzzing based on donor id
+    const seed = (d.donor_profile_id || '').split('-').join('').slice(0, 8);
+    const hash = parseInt(seed, 16) || 0;
+    const fuzzLat = ((hash % 100) - 50) * 0.00008;
+    const fuzzLng = (((hash >> 4) % 100) - 50) * 0.00008;
+
+    return {
+      donorId: d.donor_profile_id,
+      donorName: d.donor_name,
+      bloodGroup: d.blood_group,
+      approximateLatitude: parseFloat((d.latitude + fuzzLat).toFixed(4)),
+      approximateLongitude: parseFloat((d.longitude + fuzzLng).toFixed(4)),
+      distanceKm: parseFloat(d.distance_km) || 0,
+      responseStatus: d.response_status || 'NOTIFIED',
+    };
+  });
 }
 
-/**
- * Run the complete matching engine for a blood request.
- */
+/** Trigger PostGIS matching algorithm for a blood request */
 async function matchRequest(requestId) {
   const request = await bloodRequestRepository.findById(requestId);
   if (!request) throw new AppError('Blood request not found', 404);
@@ -91,13 +87,13 @@ async function matchRequest(requestId) {
   return sanitized;
 }
 
-/** Return matching donors for the request owner. Safe sanitized data only. */
+/** Fetch all currently matched donors for a request */
 async function getMatches(requestId, user) {
   const request = await bloodRequestRepository.findById(requestId);
   if (!request) throw new AppError('Blood request not found', 404);
 
   if (request.requester_id !== user.id) {
-    throw new AppError('Only the requester can view matching donors for this request', 403);
+    throw new AppError('Only the requester can view matched donor locations', 403);
   }
 
   const compatibleGroups = compatibilityService.getCompatibleDonorGroups(
@@ -117,7 +113,7 @@ async function getMatches(requestId, user) {
   return sanitizeMatches(rawDonors);
 }
 
-/** List all recorded donor responses for a request. */
+/** List all recorded donor responses for a request */
 async function getResponses(requestId, user) {
   const request = await bloodRequestRepository.findById(requestId);
   if (!request) throw new AppError('Blood request not found', 404);
@@ -129,7 +125,7 @@ async function getResponses(requestId, user) {
   return matchingRepository.listResponsesByRequest(requestId);
 }
 
-/** Donor accepts or declines a matched request. */
+/** Donor accepts or declines a matched request (Pledges to donate) */
 async function respond(requestId, user, { status }) {
   if (!['ACCEPTED', 'DECLINED'].includes(status)) {
     throw new AppError('Response status must be ACCEPTED or DECLINED', 400);
@@ -143,7 +139,7 @@ async function respond(requestId, user, { status }) {
     throw new AppError('Please complete your donor profile before responding', 400);
   }
 
-  // 1. Check if donor already responded with ACCEPTED / DECLINED (returns 409)
+  // 1. Check if donor already responded with ACCEPTED / DECLINED
   const existingResponse = await matchingRepository.findResponse(requestId, profile.id);
   if (existingResponse && (existingResponse.status === 'ACCEPTED' || existingResponse.status === 'DECLINED')) {
     throw new AppError(`You already responded with ${existingResponse.status}`, 409);
@@ -181,10 +177,9 @@ async function respond(requestId, user, { status }) {
     emitUserNotification(request.requester_id, {
       type: 'RESPONSE_RECEIVED',
       bloodRequestId: requestId,
-      message: `A compatible donor (${profile.blood_group}) accepted your blood request for ${request.hospital_name}!`,
+      message: `Donor ${user.name} (${profile.blood_group}) accepted your request for ${request.hospital_name}!`,
     });
 
-    // Emit live request update (units fulfilled, new status)
     emitRequestUpdated(requestId, result.request);
   } else {
     result = await matchingRepository.declineResponse(requestId, profile.id);
@@ -212,6 +207,40 @@ async function respond(requestId, user, { status }) {
   return result;
 }
 
+/** Confirm actual physical completion of 1 blood unit donation */
+async function confirmDonation(requestId, user, { donorId } = {}) {
+  const request = await bloodRequestRepository.findById(requestId);
+  if (!request) throw new AppError('Blood request not found', 404);
+
+  // Requester or authorized donor can confirm completion
+  const isRequester = request.requester_id === user.id;
+  let targetDonorProfileId = donorId || null;
+
+  if (!isRequester) {
+    const profile = await donorRepository.findByUserId(user.id);
+    if (!profile) throw new AppError('Unauthorized to confirm donation', 403);
+    targetDonorProfileId = profile.id;
+  }
+
+  const result = await matchingRepository.completeDonation(requestId, targetDonorProfileId);
+
+  // Broadcast real-time update
+  emitRequestUpdated(requestId, result.request);
+
+  if (targetDonorProfileId) {
+    const donorProfile = await donorRepository.findById(targetDonorProfileId);
+    if (donorProfile) {
+      emitUserNotification(donorProfile.user_id, {
+        type: 'DONATION_CONFIRMED',
+        bloodRequestId: requestId,
+        message: `🎉 Your blood donation of 1 unit for ${request.hospital_name} has been confirmed! Thank you for saving a life!`,
+      });
+    }
+  }
+
+  return result;
+}
+
 /** Retrieve all matched blood requests for a donor */
 async function getMatchedRequestsForDonor(user) {
   const profile = await donorRepository.findByUserId(user.id);
@@ -225,7 +254,6 @@ module.exports = {
   getMatches,
   getResponses,
   respond,
+  confirmDonation,
   getMatchedRequestsForDonor,
-  getSearchRadiusMeters,
-  sanitizeMatches,
 };

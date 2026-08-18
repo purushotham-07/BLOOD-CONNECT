@@ -81,10 +81,11 @@ export default function BloodRequestDetails() {
     };
   }, [id, setRequest]);
 
-  // 4. Action states (Accept/Decline/Cancel)
+  // 4. Action states (Accept/Decline/Cancel/Complete)
   const [actionError, setActionError] = useState(null);
   const [actionSuccess, setActionSuccess] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [donorPledged, setDonorPledged] = useState(false);
 
   const canCancel =
     isOwner && ['ACTIVE', 'MATCHING', 'PARTIALLY_FULFILLED'].includes(request?.status);
@@ -112,10 +113,27 @@ export default function BloodRequestDetails() {
       await requestApi.respond(id, status);
       await reloadRequest();
       if (status === 'ACCEPTED') {
-        setActionSuccess('🎉 Thank you! Your donation response is confirmed. You can now use the live coordination chat below.');
+        setDonorPledged(true);
+        setActionSuccess('🎉 Donor Accepted Request! Your response is recorded. Please coordinate with the hospital/requester in the chat below. Once physical blood donation is completed, click "Confirm Donation Completed" below.');
       } else {
         setActionSuccess('You have declined this request.');
       }
+    } catch (err) {
+      setActionError(err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleCompleteDonation = async (donorProfileId = null) => {
+    setActionError(null);
+    setActionSuccess(null);
+    setBusy(true);
+    try {
+      await requestApi.confirmDonation(id, { donorId: donorProfileId });
+      await reloadRequest();
+      await fetchMatches();
+      setActionSuccess('🎉 Blood donation successfully confirmed & fulfilled! 1 unit added to fulfillment progress.');
     } catch (err) {
       setActionError(err);
     } finally {
@@ -144,6 +162,8 @@ export default function BloodRequestDetails() {
   const unitsFulfilled = request.units_fulfilled || 0;
   const unitsRequired = request.units_required || 1;
   const progressPercent = Math.min(100, Math.round((unitsFulfilled / unitsRequired) * 100));
+
+  const hasAcceptedDonors = liveMatches.some((m) => m.responseStatus === 'ACCEPTED');
 
   const directionsUrl =
     request.latitude && request.longitude
@@ -187,8 +207,8 @@ export default function BloodRequestDetails() {
       {/* Fulfillment Progress Bar */}
       <div className="mt-4 rounded-xl border border-gray-100 bg-white p-3.5 shadow-xs">
         <div className="flex items-center justify-between text-xs font-semibold">
-          <span className="text-gray-700">Donation Progress</span>
-          <span className="text-brand-600">
+          <span className="text-gray-700">Actual Hospital Blood Fulfillment</span>
+          <span className="text-brand-600 font-bold">
             {unitsFulfilled} of {unitsRequired} Unit{unitsRequired > 1 ? 's' : ''} Fulfilled ({progressPercent}%)
           </span>
         </div>
@@ -200,6 +220,11 @@ export default function BloodRequestDetails() {
             style={{ width: `${progressPercent}%` }}
           />
         </div>
+        {unitsFulfilled < unitsRequired && hasAcceptedDonors && (
+          <p className="mt-2 text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
+            <span>✓</span> Donor accepted request and is coordinating arrival. Confirm fulfillment once blood is donated.
+          </p>
+        )}
       </div>
 
       {/* Main Grid: Interactive Map & Details */}
@@ -224,7 +249,7 @@ export default function BloodRequestDetails() {
                     <span className="h-2 w-2 rounded-full bg-blue-500"></span> Notified
                   </span>
                   <span className="inline-flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500"></span> Accepted
+                    <span className="h-2 w-2 rounded-full bg-emerald-500"></span> Donor Accepted
                   </span>
                 </div>
               )}
@@ -248,7 +273,7 @@ export default function BloodRequestDetails() {
             </div>
           </Card>
 
-          {/* Real-Time Coordination Chat: Always Active for Fast Logistics */}
+          {/* Real-Time Coordination Chat */}
           <CoordinationChat requestId={id} hospitalName={request.hospital_name} />
 
           {/* Matched Donors Card (Only visible to Requester) */}
@@ -298,14 +323,24 @@ export default function BloodRequestDetails() {
                             </div>
                           </div>
 
-                          <div>
+                          <div className="flex items-center gap-2">
                             <span
                               className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                                isAccepted ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-50 text-blue-700'
+                                isAccepted ? 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300' : 'bg-blue-50 text-blue-700'
                               }`}
                             >
-                              {isAccepted ? '✓ Accepted' : '⚡ Notified'}
+                              {isAccepted ? '✓ Donor Accepted Request' : '⚡ Notified'}
                             </span>
+
+                            {isAccepted && isOwner && unitsFulfilled < unitsRequired && (
+                              <Button
+                                onClick={() => handleCompleteDonation(donor.donorId)}
+                                disabled={busy}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] py-1 px-2.5 rounded-lg shadow-xs"
+                              >
+                                Mark Unit Received 🩸
+                              </Button>
+                            )}
                           </div>
                         </li>
                       );
@@ -339,21 +374,36 @@ export default function BloodRequestDetails() {
               )}
 
               <div className="mt-3 flex flex-col gap-2">
-                <Button
-                  onClick={() => respond('ACCEPTED')}
-                  disabled={busy}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 text-xs rounded-xl"
-                >
-                  ✓ I Can Donate
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => respond('DECLINED')}
-                  disabled={busy}
-                  className="w-full text-xs py-2 text-gray-600 rounded-xl"
-                >
-                  Can't Help
-                </Button>
+                {!donorPledged && (
+                  <Button
+                    onClick={() => respond('ACCEPTED')}
+                    disabled={busy}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 text-xs rounded-xl"
+                  >
+                    ✓ I Can Donate (Accept Request)
+                  </Button>
+                )}
+
+                {donorPledged && unitsFulfilled < unitsRequired && (
+                  <Button
+                    onClick={() => handleCompleteDonation()}
+                    disabled={busy}
+                    className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 text-xs rounded-xl shadow-xs"
+                  >
+                    🩸 Confirm Donation Completed (1 Unit)
+                  </Button>
+                )}
+
+                {!donorPledged && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => respond('DECLINED')}
+                    disabled={busy}
+                    className="w-full text-xs py-2 text-gray-600 rounded-xl"
+                  >
+                    Can't Help
+                  </Button>
+                )}
               </div>
             </div>
           )}

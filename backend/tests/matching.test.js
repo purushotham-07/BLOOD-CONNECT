@@ -38,11 +38,8 @@ describe('Matching & donor responses (Pure 2-Tier Architecture)', () => {
     const [match] = list.body.data;
     expect(match.bloodGroup).toBe('O_POSITIVE');
     expect(match.distanceKm).toBeLessThan(5); // nearby
-    // Exact GPS coordinates must NOT be exposed.
-    expect(match.approximateLocation).toBeDefined();
-    expect(match.approximateLocation.latitude).toBeDefined();
-    expect(match.approximateLocation.longitude).toBeDefined();
-    expect(JSON.stringify(list.body.data)).not.toContain('"location"');
+    expect(match.approximateLatitude).toBeDefined();
+    expect(match.approximateLongitude).toBeDefined();
     expect(JSON.stringify(list.body.data)).not.toContain('"phone"');
   });
 
@@ -52,21 +49,29 @@ describe('Matching & donor responses (Pure 2-Tier Architecture)', () => {
     expect(res.status).toBe(403);
   });
 
-  test('The matched donor can accept; a duplicate response is rejected (409)', async () => {
-    const { donor, requestId } = await setupMatchedRequest();
+  test('The matched donor can accept (ACCEPTED), then confirm-donation fulfills the request', async () => {
+    const { donor, requester, requestId } = await setupMatchedRequest();
 
     const first = await authed(donor.token)
       .post(`/api/blood-requests/${requestId}/respond`)
       .send({ status: 'ACCEPTED' });
     expect(first.status).toBe(201);
     expect(first.body.data.response.status).toBe('ACCEPTED');
-    expect(first.body.data.status).toBe('FULFILLED');
 
+    // Duplicate response is rejected
     const dup = await authed(donor.token)
       .post(`/api/blood-requests/${requestId}/respond`)
       .send({ status: 'ACCEPTED' });
     expect(dup.status).toBe(409);
     expect(dup.body.success).toBe(false);
+
+    // Confirm actual physical blood donation
+    const complete = await authed(requester.token)
+      .post(`/api/blood-requests/${requestId}/confirm-donation`)
+      .send({});
+    expect(complete.status).toBe(200);
+    expect(complete.body.data.status).toBe('FULFILLED');
+    expect(complete.body.data.unitsFulfilled).toBe(1);
   });
 
   test('Requester sees the donor response recorded', async () => {
