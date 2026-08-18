@@ -4,16 +4,24 @@ import { chatApi } from '../api/chatApi';
 import { getSocket } from '../services/socket';
 import { Button } from './ui';
 
-const PRESET_MESSAGES = [
+const DONOR_PRESETS = [
   'I am on my way to the hospital 🚗',
   'Arrived at Blood Bank reception 🏥',
   'Which floor/ward is the patient in?',
-  'Thank you so much for your help! ❤️',
   'Donation completed successfully! 🩸',
+];
+
+const RECEIVER_PRESETS = [
+  'Please ask for the emergency blood bank desk 🏥',
+  'Please let me know when you reach the hospital 🚗',
+  'Thank you so much for helping save a life! ❤️',
+  'We are waiting at the 2nd Floor blood bank.',
 ];
 
 export default function CoordinationChat({ requestId, hospitalName }) {
   const { user } = useAuth();
+  const isDonor = user?.role === 'DONOR';
+  const presetList = isDonor ? DONOR_PRESETS : RECEIVER_PRESETS;
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -187,7 +195,7 @@ export default function CoordinationChat({ requestId, hospitalName }) {
 
       {/* Preset Quick Chips */}
       <div className="flex gap-1.5 overflow-x-auto px-3 py-1.5 bg-white border-t border-gray-100 scrollbar-none">
-        {PRESET_MESSAGES.map((preset) => (
+        {presetList.map((preset) => (
           <button
             key={preset}
             type="button"
