@@ -4,8 +4,67 @@ import Loading from './Loading';
 const LeafletMap = lazy(() => import('./LeafletMap'));
 const DEFAULT_COORDS = { lat: 17.385044, lng: 78.486671 };
 
+function getLocationIconAndTag(item) {
+  const type = (item.type || '').toLowerCase();
+  const category = (item.category || '').toLowerCase();
+  const displayName = (item.display_name || '').toLowerCase();
+
+  if (
+    displayName.includes('college') ||
+    displayName.includes('university') ||
+    displayName.includes('campus') ||
+    type.includes('university') ||
+    type.includes('college')
+  ) {
+    return { icon: '🎓', tag: 'College / University' };
+  }
+  if (
+    displayName.includes('school') ||
+    displayName.includes('vidyalaya') ||
+    displayName.includes('academy') ||
+    type.includes('school')
+  ) {
+    return { icon: '🏫', tag: 'School / Academy' };
+  }
+  if (
+    displayName.includes('hospital') ||
+    displayName.includes('clinic') ||
+    displayName.includes('health') ||
+    displayName.includes('medical') ||
+    type.includes('hospital')
+  ) {
+    return { icon: '🏥', tag: 'Hospital / Medical' };
+  }
+  if (
+    displayName.includes('metro') ||
+    displayName.includes('station') ||
+    displayName.includes('railway') ||
+    displayName.includes('bus') ||
+    type.includes('station')
+  ) {
+    return { icon: '🚇', tag: 'Transit / Station' };
+  }
+  if (
+    displayName.includes('mall') ||
+    displayName.includes('market') ||
+    displayName.includes('complex')
+  ) {
+    return { icon: '🏬', tag: 'Commercial / Mall' };
+  }
+  if (
+    displayName.includes('tech park') ||
+    displayName.includes('office') ||
+    displayName.includes('tower') ||
+    displayName.includes('it park') ||
+    category.includes('office')
+  ) {
+    return { icon: '🏢', tag: 'Office / Tech Park' };
+  }
+  return { icon: '📍', tag: 'Locality / Landmark' };
+}
+
 /**
- * Mobile-optimized interactive Map component with High-Accuracy Location Search & GPS.
+ * Mobile-optimized interactive Map component with High-Accuracy Universal Search & GPS.
  */
 function Map({
   value,
@@ -56,7 +115,7 @@ function Map({
     try {
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
         query.trim()
-      )}&limit=8&addressdetails=1&extratags=1`;
+      )}&limit=10&addressdetails=1&extratags=1`;
       const res = await fetch(url, {
         headers: {
           'Accept-Language': 'en',
@@ -69,7 +128,7 @@ function Map({
           setShowDropdown(true);
         } else {
           setSearchResults([]);
-          setSearchFeedback('No matching location found. Try searching with a broader city or landmark.');
+          setSearchFeedback('No matching location found. Try searching by school, college, area, or landmark.');
           setShowDropdown(false);
         }
       }
@@ -117,9 +176,12 @@ function Map({
     // Format clean display name
     const mainTitle =
       item.name ||
+      item.address?.amenity ||
+      item.address?.school ||
+      item.address?.university ||
+      item.address?.college ||
       item.address?.suburb ||
       item.address?.neighbourhood ||
-      item.address?.hospital ||
       item.address?.city ||
       item.display_name?.split(',')[0];
 
@@ -154,13 +216,13 @@ function Map({
       (err) => {
         setLocating(false);
         if (err?.code === 1) {
-          setLocateError('GPS permission denied. Please search your location above or tap on the map.');
+          setLocateError('GPS permission denied. Please search your school, college, or area above.');
         } else if (err?.code === 2) {
-          setLocateError('Position unavailable. Please search your location above or tap on the map.');
+          setLocateError('Position unavailable. Please search your school, college, or area above.');
         } else if (err?.code === 3) {
-          setLocateError('GPS request timed out. Please search your location above or tap on the map.');
+          setLocateError('GPS request timed out. Please search your school, college, or area above.');
         } else {
-          setLocateError('Could not get GPS location. Please search your location above or tap on the map.');
+          setLocateError('Could not get GPS location. Please search your school, college, or area above.');
         }
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
@@ -180,7 +242,7 @@ function Map({
 
   return (
     <div className="w-full space-y-2">
-      {/* Location Search Bar & Controls above map (Only in selection/interactive mode) */}
+      {/* Universal Location Search Bar (Schools, Colleges, Areas, Landmarks) */}
       {interactive && !requestData && (
         <div ref={searchContainerRef} className="relative z-30 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           {/* Search Form Box */}
@@ -197,7 +259,7 @@ function Map({
                 onFocus={() => {
                   if (searchResults.length > 0) setShowDropdown(true);
                 }}
-                placeholder="Search city, hospital, area, landmark, or street..."
+                placeholder="Search any school, college, university, hospital, area, or landmark..."
                 className="w-full rounded-xl border border-gray-200 bg-white pl-8 pr-16 py-2 text-xs outline-none transition focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-2xs"
               />
               <div className="absolute right-1.5 flex items-center gap-1">
@@ -219,29 +281,33 @@ function Map({
                 <button
                   type="submit"
                   disabled={searching || !searchQuery.trim()}
-                  className="rounded-lg bg-gray-900 text-white px-2 py-1 text-[11px] font-bold hover:bg-black transition disabled:opacity-50"
+                  className="rounded-lg bg-gray-900 text-white px-2.5 py-1 text-[11px] font-bold hover:bg-black transition disabled:opacity-50"
                 >
-                  {searching ? '…' : 'Find'}
+                  {searching ? '…' : 'Search'}
                 </button>
               </div>
             </div>
 
             {/* Live Search Suggestions Dropdown */}
             {showDropdown && searchResults.length > 0 && (
-              <ul className="absolute left-0 right-0 top-full mt-1 max-h-56 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl z-50 divide-y divide-gray-50 text-xs">
+              <ul className="absolute left-0 right-0 top-full mt-1 max-h-60 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-xl z-50 divide-y divide-gray-50 text-xs">
                 {searchResults.map((item, idx) => {
+                  const { icon, tag } = getLocationIconAndTag(item);
                   const mainName =
                     item.name ||
+                    item.address?.amenity ||
+                    item.address?.school ||
+                    item.address?.university ||
+                    item.address?.college ||
                     item.address?.hospital ||
                     item.address?.suburb ||
                     item.address?.city ||
                     item.display_name.split(',')[0];
 
                   const subAddress = [
-                    item.address?.suburb,
+                    item.address?.suburb || item.address?.neighbourhood,
                     item.address?.city || item.address?.town || item.address?.county,
                     item.address?.state,
-                    item.address?.country,
                   ]
                     .filter(Boolean)
                     .join(', ');
@@ -252,9 +318,14 @@ function Map({
                       onClick={() => selectSearchResult(item)}
                       className="cursor-pointer px-3.5 py-2.5 hover:bg-brand-50 transition flex items-start gap-2.5"
                     >
-                      <span className="text-sm mt-0.5 shrink-0">📍</span>
+                      <span className="text-base mt-0.5 shrink-0">{icon}</span>
                       <div className="min-w-0 flex-1">
-                        <p className="font-bold text-gray-900 truncate">{mainName}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-gray-900 truncate">{mainName}</p>
+                          <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[9px] font-semibold text-gray-600 shrink-0">
+                            {tag}
+                          </span>
+                        </div>
                         <p className="text-[10px] text-gray-500 truncate leading-tight mt-0.5">
                           {subAddress || item.display_name}
                         </p>

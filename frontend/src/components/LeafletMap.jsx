@@ -66,15 +66,37 @@ const createUserLocationIcon = () =>
     popupAnchor: [0, -12],
   });
 
+// ── Map Styles / Layers ───────────────────────────────────────────
+const MAP_LAYERS = {
+  detailed: {
+    name: 'Detailed',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    maxZoom: 19,
+  },
+  satellite: {
+    name: 'Satellite',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+    maxZoom: 19,
+  },
+  standard: {
+    name: 'Standard',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19,
+  },
+};
+
 // ── Helper Components ────────────────────────────────────────────
 
 function AutoFitBounds({ bounds, center }) {
   const map = useMap();
   useEffect(() => {
     if (bounds && bounds.length > 1) {
-      map.fitBounds(bounds, { padding: [35, 35], maxZoom: 15, animate: true });
+      map.fitBounds(bounds, { padding: [35, 35], maxZoom: 16, animate: true });
     } else if (center && Array.isArray(center) && center.length === 2 && !Number.isNaN(center[0])) {
-      map.flyTo(center, Math.max(map.getZoom() || 14, 14), { duration: 0.8 });
+      map.flyTo(center, Math.max(map.getZoom() || 15, 15), { duration: 0.8 });
     }
   }, [bounds, center, map]);
   return null;
@@ -103,6 +125,7 @@ export default function LeafletMap({
   enableDensityToggle = false,
 }) {
   const defaultCenter = { lat: 17.385044, lng: 78.486671 };
+  const [mapLayer, setMapLayer] = useState('detailed');
 
   // Density layer state
   const [showDensity, setShowDensity] = useState(false);
@@ -147,8 +170,8 @@ export default function LeafletMap({
     }
     if (matchedDonors && matchedDonors.length > 0) {
       matchedDonors.forEach((d) => {
-        if (d.approximateLocation?.latitude && d.approximateLocation?.longitude) {
-          points.push([d.approximateLocation.latitude, d.approximateLocation.longitude]);
+        if (d.approximateLatitude && d.approximateLongitude) {
+          points.push([d.approximateLatitude, d.approximateLongitude]);
         }
       });
     }
@@ -166,31 +189,72 @@ export default function LeafletMap({
     ? getDirectionsUrl(reqPos[0], reqPos[1], requestData?.hospital_name)
     : null;
 
+  const currentTileLayer = MAP_LAYERS[mapLayer] || MAP_LAYERS.detailed;
+
   return (
     <div className="relative w-full">
-      {enableDensityToggle && (
-        <button
-          type="button"
-          onClick={() => setShowDensity((d) => !d)}
-          className={`absolute top-2.5 left-2.5 z-[1000] blood-map__control ${
-            showDensity ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-gray-700'
-          }`}
-        >
-          <span>🔥</span> {showDensity ? 'Hide Density' : 'Donor Density'}
-        </button>
-      )}
+      {/* Map Controls Toolbar (Top Left) */}
+      <div className="absolute top-2.5 left-2.5 z-[1000] flex items-center gap-1.5">
+        {/* Layer Mode Switcher */}
+        <div className="flex rounded-xl bg-white/90 p-0.5 shadow-sm ring-1 ring-black/10 backdrop-blur-xs text-[10px] font-semibold text-gray-700">
+          <button
+            type="button"
+            onClick={() => setMapLayer('detailed')}
+            className={`rounded-lg px-2 py-1 transition ${
+              mapLayer === 'detailed' ? 'bg-brand-600 text-white shadow-2xs font-bold' : 'hover:bg-gray-100'
+            }`}
+            title="Detailed View with Schools, Colleges, Buildings & Landmarks"
+          >
+            🗺️ Detailed
+          </button>
+          <button
+            type="button"
+            onClick={() => setMapLayer('satellite')}
+            className={`rounded-lg px-2 py-1 transition ${
+              mapLayer === 'satellite' ? 'bg-brand-600 text-white shadow-2xs font-bold' : 'hover:bg-gray-100'
+            }`}
+            title="Real Satellite Aerial View"
+          >
+            🛰️ Satellite
+          </button>
+          <button
+            type="button"
+            onClick={() => setMapLayer('standard')}
+            className={`rounded-lg px-2 py-1 transition ${
+              mapLayer === 'standard' ? 'bg-brand-600 text-white shadow-2xs font-bold' : 'hover:bg-gray-100'
+            }`}
+            title="Standard OSM Map"
+          >
+            🌐 Street
+          </button>
+        </div>
+
+        {enableDensityToggle && (
+          <button
+            type="button"
+            onClick={() => setShowDensity((d) => !d)}
+            className={`blood-map__control ${
+              showDensity ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-gray-700'
+            }`}
+          >
+            <span>🔥</span> {showDensity ? 'Hide Density' : 'Donor Density'}
+          </button>
+        )}
+      </div>
 
       <MapContainer
         center={centerPos}
-        zoom={14}
-        scrollWheelZoom={false}
+        zoom={15}
+        scrollWheelZoom={true}
         preferCanvas={true}
         style={{ height, width: '100%' }}
         className="blood-map"
       >
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          key={mapLayer}
+          url={currentTileLayer.url}
+          attribution={currentTileLayer.attribution}
+          maxZoom={currentTileLayer.maxZoom}
         />
 
         <AutoFitBounds bounds={mapBounds} center={centerPos} />
