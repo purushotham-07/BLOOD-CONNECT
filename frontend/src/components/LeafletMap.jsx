@@ -95,6 +95,86 @@ function ClickHandler({ interactive, onChange }) {
   return null;
 }
 
+// ── Directional Pan Navigation Controls (Arrow Buttons) ──────────
+
+function MapNavigationControls({ interactive, onChange }) {
+  const map = useMap();
+
+  const pan = (dx, dy) => {
+    map.panBy([dx, dy], { animate: true, duration: 0.25 });
+  };
+
+  const handleCenterPin = () => {
+    if (interactive && onChange) {
+      const center = map.getCenter();
+      onChange({ lat: center.lat, lng: center.lng });
+    }
+  };
+
+  return (
+    <div className="leaflet-bottom leaflet-right" style={{ pointerEvents: 'auto', marginBottom: '8px', marginRight: '8px', zIndex: 1000 }}>
+      <div className="leaflet-control flex flex-col items-center bg-white/95 backdrop-blur-md rounded-2xl p-1.5 shadow-md border border-gray-200/90 text-gray-700 select-none">
+        {/* Up Arrow */}
+        <button
+          type="button"
+          onClick={() => pan(0, -120)}
+          title="Move Up (North)"
+          className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-gray-100 active:bg-gray-200 transition text-xs font-bold text-gray-800"
+          aria-label="Move map up"
+        >
+          ▲
+        </button>
+
+        {/* Left, Center Pin, Right Arrows */}
+        <div className="flex items-center gap-1 my-0.5">
+          <button
+            type="button"
+            onClick={() => pan(-120, 0)}
+            title="Move Left (West)"
+            className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-gray-100 active:bg-gray-200 transition text-xs font-bold text-gray-800"
+            aria-label="Move map left"
+          >
+            ◀
+          </button>
+
+          {interactive && (
+            <button
+              type="button"
+              onClick={handleCenterPin}
+              title="Place Pin at Center View"
+              className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 active:bg-brand-200 transition text-xs font-bold shadow-2xs"
+              aria-label="Place pin at center view"
+            >
+              📍
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => pan(120, 0)}
+            title="Move Right (East)"
+            className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-gray-100 active:bg-gray-200 transition text-xs font-bold text-gray-800"
+            aria-label="Move map right"
+          >
+            ▶
+          </button>
+        </div>
+
+        {/* Down Arrow */}
+        <button
+          type="button"
+          onClick={() => pan(0, 120)}
+          title="Move Down (South)"
+          className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-gray-100 active:bg-gray-200 transition text-xs font-bold text-gray-800"
+          aria-label="Move map down"
+        >
+          ▼
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function LeafletMap({
   value,
   onChange,
@@ -201,6 +281,7 @@ export default function LeafletMap({
 
         <AutoFitBounds bounds={mapBounds} center={centerPos} />
         <ClickHandler interactive={interactive} onChange={onChange} />
+        <MapNavigationControls interactive={interactive} onChange={onChange} />
 
         {/* Density Clusters */}
         {showDensity &&
