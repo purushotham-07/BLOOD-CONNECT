@@ -130,6 +130,23 @@ export default function DonorProfile() {
                   </div>
                 )}
 
+                {/* Medical Eligibility Screening Status */}
+                <div className="rounded-xl bg-emerald-50/80 border border-emerald-200 p-3 text-xs flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🩺</span>
+                    <div>
+                      <p className="font-bold text-emerald-900">Medical Pre-Screening</p>
+                      <p className="text-[11px] text-emerald-700">Health & eligibility verification verified</p>
+                    </div>
+                  </div>
+                  <Link
+                    to="/eligibility-quiz"
+                    className="shrink-0 text-[11px] font-bold text-emerald-800 bg-white border border-emerald-300 px-2.5 py-1 rounded-lg hover:bg-emerald-100 transition"
+                  >
+                    Retake Quiz 🩺
+                  </Link>
+                </div>
+
                 <Select label="My Blood Group" name="bloodGroup" value={form.bloodGroup} onChange={onChange}>
                   {BLOOD_GROUPS.map((bg) => (
                     <option key={bg} value={bg}>

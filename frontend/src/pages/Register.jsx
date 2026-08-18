@@ -33,7 +33,7 @@ export default function Register() {
     try {
       await register(form);
       if (form.role === 'DONOR') {
-        navigate('/donor-profile', { replace: true });
+        navigate('/eligibility-quiz?onboarding=true', { replace: true });
       } else {
         navigate('/dashboard', { replace: true });
       }
