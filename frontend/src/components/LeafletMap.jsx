@@ -53,40 +53,22 @@ const createDonorIcon = (bloodGroup, responseStatus) => {
   });
 };
 
+// Elevated teardrop pin with needle anchor at bottom tip so it never covers the text underneath
 const createUserLocationIcon = () =>
   L.divIcon({
     className: 'custom-div-icon',
     html: `
-      <div class="user-marker">
-        <div class="user-marker__dot"></div>
+      <div style="display:flex; flex-direction:column; align-items:center; transform: translate(-14px, -28px); filter: drop-shadow(0 3px 5px rgba(0,0,0,0.35)); cursor: pointer;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="#dc2626" stroke="#ffffff" stroke-width="1.2">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+          <circle cx="12" cy="9" r="2.8" fill="#ffffff"/>
+        </svg>
       </div>
     `,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-    popupAnchor: [0, -12],
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+    popupAnchor: [0, -28],
   });
-
-// ── Map Styles / Layers ───────────────────────────────────────────
-const MAP_LAYERS = {
-  detailed: {
-    name: 'Detailed',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-    maxZoom: 19,
-  },
-  satellite: {
-    name: 'Satellite',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: '&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-    maxZoom: 19,
-  },
-  standard: {
-    name: 'Standard',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 19,
-  },
-};
 
 // ── Helper Components ────────────────────────────────────────────
 
@@ -96,7 +78,7 @@ function AutoFitBounds({ bounds, center }) {
     if (bounds && bounds.length > 1) {
       map.fitBounds(bounds, { padding: [35, 35], maxZoom: 16, animate: true });
     } else if (center && Array.isArray(center) && center.length === 2 && !Number.isNaN(center[0])) {
-      map.flyTo(center, Math.max(map.getZoom() || 15, 15), { duration: 0.8 });
+      map.flyTo(center, Math.max(map.getZoom() || 14, 14), { duration: 0.8 });
     }
   }, [bounds, center, map]);
   return null;
@@ -125,7 +107,6 @@ export default function LeafletMap({
   enableDensityToggle = false,
 }) {
   const defaultCenter = { lat: 17.385044, lng: 78.486671 };
-  const [mapLayer, setMapLayer] = useState('detailed');
 
   // Density layer state
   const [showDensity, setShowDensity] = useState(false);
@@ -189,72 +170,33 @@ export default function LeafletMap({
     ? getDirectionsUrl(reqPos[0], reqPos[1], requestData?.hospital_name)
     : null;
 
-  const currentTileLayer = MAP_LAYERS[mapLayer] || MAP_LAYERS.detailed;
-
   return (
     <div className="relative w-full">
-      {/* Map Controls Toolbar (Top Left) */}
-      <div className="absolute top-2.5 left-2.5 z-[1000] flex items-center gap-1.5">
-        {/* Layer Mode Switcher */}
-        <div className="flex rounded-xl bg-white/90 p-0.5 shadow-sm ring-1 ring-black/10 backdrop-blur-xs text-[10px] font-semibold text-gray-700">
-          <button
-            type="button"
-            onClick={() => setMapLayer('detailed')}
-            className={`rounded-lg px-2 py-1 transition ${
-              mapLayer === 'detailed' ? 'bg-brand-600 text-white shadow-2xs font-bold' : 'hover:bg-gray-100'
-            }`}
-            title="Detailed View with Schools, Colleges, Buildings & Landmarks"
-          >
-            🗺️ Detailed
-          </button>
-          <button
-            type="button"
-            onClick={() => setMapLayer('satellite')}
-            className={`rounded-lg px-2 py-1 transition ${
-              mapLayer === 'satellite' ? 'bg-brand-600 text-white shadow-2xs font-bold' : 'hover:bg-gray-100'
-            }`}
-            title="Real Satellite Aerial View"
-          >
-            🛰️ Satellite
-          </button>
-          <button
-            type="button"
-            onClick={() => setMapLayer('standard')}
-            className={`rounded-lg px-2 py-1 transition ${
-              mapLayer === 'standard' ? 'bg-brand-600 text-white shadow-2xs font-bold' : 'hover:bg-gray-100'
-            }`}
-            title="Standard OSM Map"
-          >
-            🌐 Street
-          </button>
-        </div>
-
-        {enableDensityToggle && (
-          <button
-            type="button"
-            onClick={() => setShowDensity((d) => !d)}
-            className={`blood-map__control ${
-              showDensity ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-gray-700'
-            }`}
-          >
-            <span>🔥</span> {showDensity ? 'Hide Density' : 'Donor Density'}
-          </button>
-        )}
-      </div>
+      {enableDensityToggle && (
+        <button
+          type="button"
+          onClick={() => setShowDensity((d) => !d)}
+          className={`absolute top-2.5 right-2.5 z-[1000] blood-map__control ${
+            showDensity ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-gray-700'
+          }`}
+        >
+          <span>🔥</span> {showDensity ? 'Hide Density' : 'Donor Density'}
+        </button>
+      )}
 
       <MapContainer
         center={centerPos}
-        zoom={15}
+        zoom={14}
         scrollWheelZoom={true}
         preferCanvas={true}
         style={{ height, width: '100%' }}
         className="blood-map"
       >
+        {/* Clean Standard OpenStreetMap layer rendering all roads, schools, colleges, towns & landmarks */}
         <TileLayer
-          key={mapLayer}
-          url={currentTileLayer.url}
-          attribution={currentTileLayer.attribution}
-          maxZoom={currentTileLayer.maxZoom}
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          maxZoom={19}
         />
 
         <AutoFitBounds bounds={mapBounds} center={centerPos} />
@@ -384,7 +326,7 @@ export default function LeafletMap({
             );
           })}
 
-        {/* Single Selection Marker */}
+        {/* Single Selection Marker with non-blocking elevated teardrop tip */}
         {displaySingleMarker && !reqPos && (
           <Marker
             position={[displaySingleMarker.lat, displaySingleMarker.lng]}
