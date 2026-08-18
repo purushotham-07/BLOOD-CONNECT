@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -99,9 +99,23 @@ function ClickHandler({ interactive, onChange }) {
 
 function MapNavigationControls({ interactive, onChange }) {
   const map = useMap();
+  const containerRef = useRef(null);
 
-  const pan = (dx, dy) => {
+  useEffect(() => {
+    if (containerRef.current) {
+      L.DomEvent.disableClickPropagation(containerRef.current);
+      L.DomEvent.disableScrollPropagation(containerRef.current);
+    }
+  }, []);
+
+  const move = (dx, dy) => {
     map.panBy([dx, dy], { animate: true, duration: 0.25 });
+    if (interactive && onChange) {
+      setTimeout(() => {
+        const center = map.getCenter();
+        onChange({ lat: center.lat, lng: center.lng });
+      }, 260);
+    }
   };
 
   const handleCenterPin = () => {
@@ -112,26 +126,42 @@ function MapNavigationControls({ interactive, onChange }) {
   };
 
   return (
-    <div className="leaflet-bottom leaflet-right" style={{ pointerEvents: 'auto', marginBottom: '8px', marginRight: '8px', zIndex: 1000 }}>
-      <div className="leaflet-control flex flex-col items-center bg-white/95 backdrop-blur-md rounded-2xl p-1.5 shadow-md border border-gray-200/90 text-gray-700 select-none">
+    <div
+      ref={containerRef}
+      className="leaflet-bottom leaflet-right"
+      style={{ pointerEvents: 'auto', marginBottom: '10px', marginRight: '10px', zIndex: 1000 }}
+    >
+      <div className="leaflet-control flex flex-col items-center bg-white/95 backdrop-blur-md rounded-2xl p-1.5 shadow-lg border border-gray-200/90 text-gray-800 select-none">
         {/* Up Arrow */}
         <button
           type="button"
-          onClick={() => pan(0, -120)}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            move(0, -120);
+          }}
           title="Move Up (North)"
-          className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-gray-100 active:bg-gray-200 transition text-xs font-bold text-gray-800"
+          className="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-50 hover:bg-gray-100 active:bg-brand-50 active:text-brand-600 border border-gray-200 transition text-sm font-bold text-gray-800 shadow-2xs cursor-pointer"
           aria-label="Move map up"
         >
           ▲
         </button>
 
         {/* Left, Center Pin, Right Arrows */}
-        <div className="flex items-center gap-1 my-0.5">
+        <div className="flex items-center gap-1 my-1">
           <button
             type="button"
-            onClick={() => pan(-120, 0)}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              move(-120, 0);
+            }}
             title="Move Left (West)"
-            className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-gray-100 active:bg-gray-200 transition text-xs font-bold text-gray-800"
+            className="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-50 hover:bg-gray-100 active:bg-brand-50 active:text-brand-600 border border-gray-200 transition text-sm font-bold text-gray-800 shadow-2xs cursor-pointer"
             aria-label="Move map left"
           >
             ◀
@@ -140,9 +170,15 @@ function MapNavigationControls({ interactive, onChange }) {
           {interactive && (
             <button
               type="button"
-              onClick={handleCenterPin}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCenterPin();
+              }}
               title="Place Pin at Center View"
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 active:bg-brand-200 transition text-xs font-bold shadow-2xs"
+              className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white transition text-xs font-bold shadow-xs cursor-pointer"
               aria-label="Place pin at center view"
             >
               📍
@@ -151,9 +187,15 @@ function MapNavigationControls({ interactive, onChange }) {
 
           <button
             type="button"
-            onClick={() => pan(120, 0)}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              move(120, 0);
+            }}
             title="Move Right (East)"
-            className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-gray-100 active:bg-gray-200 transition text-xs font-bold text-gray-800"
+            className="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-50 hover:bg-gray-100 active:bg-brand-50 active:text-brand-600 border border-gray-200 transition text-sm font-bold text-gray-800 shadow-2xs cursor-pointer"
             aria-label="Move map right"
           >
             ▶
@@ -163,9 +205,15 @@ function MapNavigationControls({ interactive, onChange }) {
         {/* Down Arrow */}
         <button
           type="button"
-          onClick={() => pan(0, 120)}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            move(0, 120);
+          }}
           title="Move Down (South)"
-          className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-gray-100 active:bg-gray-200 transition text-xs font-bold text-gray-800"
+          className="flex h-8 w-8 items-center justify-center rounded-xl bg-gray-50 hover:bg-gray-100 active:bg-brand-50 active:text-brand-600 border border-gray-200 transition text-sm font-bold text-gray-800 shadow-2xs cursor-pointer"
           aria-label="Move map down"
         >
           ▼
