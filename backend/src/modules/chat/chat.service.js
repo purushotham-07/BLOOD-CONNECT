@@ -7,27 +7,22 @@ const { getIo } = require('../../socket');
 
 /**
  * Verify user is authorized to participate in coordination chat for this blood request.
- * Authorized participants: The requester and donors who have ACCEPTED the request.
+ * Authorized participants: The requester and registered donors.
  */
 async function verifyChatAccess(requestId, user) {
   const request = await bloodRequestRepository.findById(requestId);
   if (!request) throw new AppError('Blood request not found', 404);
 
-  // If requester, access granted
+  // Requester has full chat access
   if (request.requester_id === user.id) {
     return { request, isRequester: true };
   }
 
-  // If donor, verify they have accepted this request
+  // Donor with a valid profile has chat access
   if (user.role === 'DONOR') {
     const profile = await donorRepository.findByUserId(user.id);
     if (!profile) {
-      throw new AppError('Coordination chat is only available to accepted donors for this request', 403);
-    }
-
-    const response = await matchingRepository.findResponse(requestId, profile.id);
-    if (!response || response.status !== 'ACCEPTED') {
-      throw new AppError('Coordination chat is only available after you accept the request', 403);
+      throw new AppError('Please complete your donor profile first to join the coordination chat', 403);
     }
     return { request, isRequester: false, profile };
   }

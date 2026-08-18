@@ -85,7 +85,6 @@ export default function BloodRequestDetails() {
   const [actionError, setActionError] = useState(null);
   const [actionSuccess, setActionSuccess] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [donorAccepted, setDonorAccepted] = useState(false);
 
   const canCancel =
     isOwner && ['ACTIVE', 'MATCHING', 'PARTIALLY_FULFILLED'].includes(request?.status);
@@ -113,8 +112,7 @@ export default function BloodRequestDetails() {
       await requestApi.respond(id, status);
       await reloadRequest();
       if (status === 'ACCEPTED') {
-        setDonorAccepted(true);
-        setActionSuccess('Thank you! Your donation response is confirmed. You can now use the coordination chat below.');
+        setActionSuccess('🎉 Thank you! Your donation response is confirmed. You can now use the live coordination chat below.');
       } else {
         setActionSuccess('You have declined this request.');
       }
@@ -146,9 +144,6 @@ export default function BloodRequestDetails() {
   const unitsFulfilled = request.units_fulfilled || 0;
   const unitsRequired = request.units_required || 1;
   const progressPercent = Math.min(100, Math.round((unitsFulfilled / unitsRequired) * 100));
-
-  const hasAcceptedDonors = liveMatches.some((m) => m.responseStatus === 'ACCEPTED');
-  const showChat = isOwner ? hasAcceptedDonors : donorAccepted;
 
   const directionsUrl =
     request.latitude && request.longitude
@@ -253,10 +248,8 @@ export default function BloodRequestDetails() {
             </div>
           </Card>
 
-          {/* Real-Time Coordination Chat */}
-          {showChat && (
-            <CoordinationChat requestId={id} hospitalName={request.hospital_name} />
-          )}
+          {/* Real-Time Coordination Chat: Always Active for Fast Logistics */}
+          <CoordinationChat requestId={id} hospitalName={request.hospital_name} />
 
           {/* Matched Donors Card (Only visible to Requester) */}
           {canSeeMatches && (
