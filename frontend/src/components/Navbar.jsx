@@ -78,8 +78,9 @@ export default function Navbar() {
             </svg>
           </span>
           <div className="flex flex-col">
-            <span className="text-base sm:text-lg font-black tracking-tight text-gray-900 leading-tight">BloodConnect</span>
-            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-brand-600">Location Matching</span>
+            <span className="text-lg sm:text-xl font-black tracking-tight text-brand-600 leading-none">
+              Blood<span className="text-gray-900">Connect</span>
+            </span>
           </div>
         </Link>
 

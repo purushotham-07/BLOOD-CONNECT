@@ -5,7 +5,7 @@ export default function Footer() {
         <div className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
           <span className="font-semibold text-gray-700">BloodConnect</span>
-          <span>· PostGIS Engine</span>
+          <span>· Emergency Blood Network</span>
         </div>
         <p>
           © {new Date().getFullYear()} <strong className="font-semibold text-gray-600">Purushotham Reddy</strong> · <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer" className="hover:text-gray-800 transition">MIT License</a>

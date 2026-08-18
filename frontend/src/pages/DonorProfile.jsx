@@ -103,7 +103,7 @@ export default function DonorProfile() {
         <div>
           <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Donor Profile & Location</h1>
           <p className="mt-1 text-xs text-gray-500 sm:text-sm">
-            Configure your blood group, notification radius, and saved location. PostgreSQL PostGIS uses this to match you with nearby blood requests.
+            Configure your blood group, notification radius, and saved location. BloodConnect uses this to match you with nearby blood requests.
           </p>
         </div>
         {existing && (
@@ -154,7 +154,7 @@ export default function DonorProfile() {
                         Available to Receive Donation Requests
                       </span>
                       <p className="text-[11px] text-gray-500">
-                        When enabled, the PostGIS engine matches you with urgent requests in your radius.
+                        When enabled, you will receive notifications for urgent requests in your radius.
                       </p>
                     </div>
                   </label>
@@ -233,7 +233,7 @@ export default function DonorProfile() {
                 </p>
               </div>
               <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">
-                PostGIS GPS
+                Saved Location
               </span>
             </div>
 

@@ -72,7 +72,7 @@ export default function CreateBloodRequest() {
       <div className="mt-3">
         <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Create New Blood Request</h1>
         <p className="mt-1 text-xs text-gray-500 sm:text-sm">
-          PostGIS matching engine will instantly locate and notify compatible donors around the hospital.
+          BloodConnect will instantly locate and alert compatible donors in the hospital area.
         </p>
       </div>
 
@@ -175,7 +175,7 @@ export default function CreateBloodRequest() {
               </p>
             </div>
             <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-[10px] font-bold text-brand-700">
-              PostGIS Point
+              Hospital Pin
             </span>
           </div>
 

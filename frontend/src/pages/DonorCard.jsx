@@ -124,7 +124,7 @@ export default function DonorCard() {
             {/* Card Footer */}
             <div className="mt-5 flex items-center justify-between border-t border-brand-100 pt-3 text-[10px] text-gray-400">
               <span>ID: {user?.id?.slice(0, 13)}…</span>
-              <span>PostGIS Verified Donor Network</span>
+              <span>BloodConnect Verified Network</span>
             </div>
           </div>
 

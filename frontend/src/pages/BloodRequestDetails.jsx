@@ -283,7 +283,7 @@ export default function BloodRequestDetails() {
                 <div>
                   <h3 className="text-xs sm:text-sm font-bold text-gray-900">Matched Nearby Donors</h3>
                   <p className="text-[11px] text-gray-500">
-                    Live updates via PostgreSQL + PostGIS spatial distance ranking
+                    Live updates with real-time distance and donor status
                   </p>
                 </div>
                 <Button variant="secondary" onClick={fetchMatches} disabled={matchesLoading} className="text-xs py-1.5 px-3">

@@ -111,7 +111,7 @@ export default function Dashboard() {
               </span>
             </div>
             <p className="mt-1 text-sm text-gray-500">
-              Your donor dashboard, PostGIS matching radius & live coordination requests.
+              Your donor dashboard, matching radius & live coordination requests.
             </p>
           </div>
           <Link to="/donor-profile">
@@ -131,7 +131,7 @@ export default function Dashboard() {
                 <span className="text-4xl">🩸</span>
                 <h2 className="mt-3 text-lg font-bold text-gray-900">Complete Your Donor Profile</h2>
                 <p className="mt-1 text-sm text-gray-600 max-w-md mx-auto">
-                  Set your blood group and saved location so our PostgreSQL PostGIS engine can match you with urgent nearby requests.
+                  Set your blood group and saved location so BloodConnect can match you with urgent nearby requests.
                 </p>
                 <Link to="/donor-profile" className="mt-5 inline-block">
                   <Button className="bg-brand-600 hover:bg-brand-700 text-white font-bold px-6 py-2.5 rounded-xl shadow-md">
@@ -153,7 +153,7 @@ export default function Dashboard() {
                     label="Availability"
                     value={profile.available ? 'Active' : 'Paused'}
                     tone={profile.available ? 'text-emerald-600' : 'text-gray-400'}
-                    subtext={profile.available ? 'Eligible for PostGIS matching' : 'Temporarily paused'}
+                    subtext={profile.available ? 'Eligible for live matching' : 'Temporarily paused'}
                     action={
                       <button
                         onClick={() => handleAvailability(!profile.available)}
@@ -169,7 +169,7 @@ export default function Dashboard() {
                   <StatCard
                     label="Notification Radius"
                     value={`${profile.notification_radius} km`}
-                    subtext="PostGIS spatial radius"
+                    subtext="Distance alert radius"
                     tone="text-blue-600"
                   />
                   <StatCard
@@ -324,7 +324,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Welcome, {user.name}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Create emergency blood requests and track real-time PostGIS donor matches on the map.
+            Create emergency blood requests and track real-time compatible donor matches on the map.
           </p>
         </div>
         <Link to="/create-request">
